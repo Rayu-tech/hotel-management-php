@@ -4,3 +4,4 @@ debug.log
 public/admin/test.php
 public/admin/file.php
 composer.lock.git_old/
+.git_old
