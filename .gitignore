@@ -3,4 +3,4 @@ package-lock.json
 debug.log
 public/admin/test.php
 public/admin/file.php
-composer.lock
+composer.lock.git_old/
