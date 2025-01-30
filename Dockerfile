@@ -1,8 +1,7 @@
-# Use PHP FPM image as the base
 FROM php:8.2-fpm
 
 # Install required system dependencies for PHP and Nginx
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     unzip \
     libpng-dev \
@@ -10,7 +9,8 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql mbstring zip exif pcntl bcmath \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -31,11 +31,10 @@ RUN chown -R www-data:www-data /var/www
 RUN composer install --no-dev --optimize-autoloader
 
 # Expose the necessary ports (Nginx: 80, PHP-FPM: 9000)
-EXPOSE 80
-EXPOSE 9000
+EXPOSE 80 9000
 
-# Define environment variables (optional)
-ENV NAME hotel-management-php
+# Define environment variables (fixed format)
+ENV NAME="hotel-management-php"
 
-# Start Nginx and PHP-FPM when the container runs
-CMD ["sh", "-c", "service nginx start && php-fpm"]
+# Use a script to start both Nginx and PHP-FPM properly
+CMD ["sh", "-c", "nginx && php-fpm"]
