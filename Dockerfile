@@ -1,36 +1,24 @@
-# Use PHP FPM image as the base
-FROM php:8.2-fpm
+FROM python:3.1
 
-# Set DEBIAN_FRONTEND to avoid interactive prompts
-ENV DEBIAN_FRONTEND=noninteractive
+# Set the working directory to /app
+WORKDIR /app
 
-# Install required dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx \
-    unzip \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libonig-dev \
-    libzip-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql mbstring zip exif pcntl bcmath \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Add the current directory contents into the container at /app
+ADD . /app
 
-# Install Composer globally
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Install any needed packages specified in requirements.txt
+ADD requirements.txt /app/requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . /var/www
-WORKDIR /var/www
-RUN chown -R www-data:www-data /var/www
+# Expose ports based on the database type
+EXPOSE 5432
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader || cat /var/www/composer.log
 
-# Expose ports
-EXPOSE 80 9000
+# Default port for the application
+EXPOSE 8003
 
-# Start services
-CMD ["sh", "-c", "nginx -g 'daemon off;' & php-fpm"]
+# Define environment variable
+ENV NAME phpgittest
+
+# Run the application
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8003"]
