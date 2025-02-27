@@ -1,24 +1,51 @@
-FROM python:3.1
+FROM php:8.2-fpm
 
-# Set the working directory to /app
-WORKDIR /app
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    nginx \
+    libzip-dev \
+    zip \
+    unzip \
+    git \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+    pdo_mysql \
+    mysqli \
+    zip \
+    gd \
+    exif \
+    pcntl \
+    bcmath
 
-# Add the current directory contents into the container at /app
-ADD . /app
+# Configure PHP
+RUN echo "upload_max_filesize = 64M" > /usr/local/etc/php/conf.d/uploads.ini
 
-# Install any needed packages specified in requirements.txt
-ADD requirements.txt /app/requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Configure Nginx
+COPY docker_files/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose ports based on the database type
-EXPOSE 5432
+# Set working directory
+WORKDIR /var/www/html
 
+# Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Default port for the application
-EXPOSE 8003
+# Copy application code
+COPY . /var/www/html/
 
-# Define environment variable
-ENV NAME phpgittest
+# Install dependencies if composer.json is present
+RUN if [ -f "composer.json" ]; then composer install --no-dev --optimize-autoloader; fi
 
-# Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8003"]
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
+# Create start script
+RUN echo '#!/bin/bash\nservice nginx start\nphp-fpm' > /start.sh \
+    && chmod +x /start.sh
+
+EXPOSE 9000
+
+CMD ["/start.sh"]
