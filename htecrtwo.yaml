@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hoteltwo-msgatewayhtwo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hoteltwo-msgatewayhtwo
+  template:
+    metadata:
+      annotations:
+        redeploy: 'true'
+      labels:
+        app: hoteltwo-msgatewayhtwo
+    spec:
+      containers:
+      - image: 672072155362.dkr.ecr.us-east-1.amazonaws.com/htecrtwo:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 9000
+          initialDelaySeconds: 180
+          periodSeconds: 5
+        name: htecrtwo
+        ports:
+        - containerPort: 9000
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: msgatewayhtwo-service
+spec:
+  ports:
+  - port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: hoteltwo-msgatewayhtwo
+  type: ClusterIP
